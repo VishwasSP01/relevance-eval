@@ -10,6 +10,7 @@ java {
 
 dependencies {
     implementation(project(":core"))
+    implementation(project(":backend-elasticsearch"))
     implementation("info.picocli:picocli:4.7.6")
 
     testImplementation(platform("org.junit:junit-bom:5.10.3"))
