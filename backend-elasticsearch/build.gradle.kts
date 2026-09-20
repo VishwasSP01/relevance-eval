@@ -8,6 +8,8 @@ java {
     }
 }
 
+val testcontainersVersion = "1.20.6"
+
 dependencies {
     api(project(":core"))
 
@@ -20,11 +22,28 @@ dependencies {
     testImplementation("org.assertj:assertj-core:3.26.3")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
-    testImplementation("org.testcontainers:testcontainers:1.20.1")
-    testImplementation("org.testcontainers:elasticsearch:1.20.1")
-    testImplementation("org.testcontainers:junit-jupiter:1.20.1")
+    testImplementation(platform("org.testcontainers:testcontainers-bom:$testcontainersVersion"))
+    testImplementation("org.testcontainers:testcontainers")
+    testImplementation("org.testcontainers:elasticsearch")
+    testImplementation("org.testcontainers:junit-jupiter")
 }
 
 tasks.test {
-    useJUnitPlatform()
+    useJUnitPlatform {
+        excludeTags("integration")
+    }
+}
+
+tasks.register<Test>("integrationTest") {
+    description = "Runs integration tests requiring Docker."
+    group = "verification"
+
+    testClassesDirs = sourceSets["test"].output.classesDirs
+    classpath = sourceSets["test"].runtimeClasspath
+
+    useJUnitPlatform {
+        includeTags("integration")
+    }
+
+    shouldRunAfter(tasks.test)
 }

@@ -12,6 +12,7 @@ dependencies {
     implementation(project(":core"))
     implementation(project(":backend-elasticsearch"))
     implementation("info.picocli:picocli:4.7.6")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.17.2")
 
     testImplementation(platform("org.junit:junit-bom:5.10.3"))
     testImplementation("org.junit.jupiter:junit-jupiter")
@@ -20,7 +21,7 @@ dependencies {
 }
 
 application {
-    mainClass.set("io.github.vishwassp01.relevanceeval.cli.EvaluateCommand")
+    mainClass.set("io.github.vishwassp01.relevanceeval.cli.RelevanceEvalCommand")
 }
 
 tasks.test {

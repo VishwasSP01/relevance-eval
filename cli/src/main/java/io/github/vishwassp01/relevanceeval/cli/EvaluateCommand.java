@@ -23,6 +23,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+
 /**
  * Command-line entry point to evaluate search relevance against ground-truth judgment sets.
  */
@@ -54,6 +57,12 @@ public class EvaluateCommand implements Callable<Integer> {
             description = "How many results to request from the backend (default: 10)."
     )
     private int size = 10;
+
+    @Option(
+            names = {"--output"},
+            description = "Path to write the evaluation results as JSON for later comparison."
+    )
+    private Path outputPath;
 
     @Option(
             names = {"--demo"},
@@ -109,6 +118,19 @@ public class EvaluateCommand implements Callable<Integer> {
 
         // 5. Print results table
         printResultsTable(judgmentSet, backend, results);
+
+        // 6. Optionally save output to JSON file
+        if (outputPath != null) {
+            try {
+                ObjectMapper mapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
+                Object toWrite = (results.size() == 1) ? results.get(0) : results;
+                mapper.writeValue(outputPath.toFile(), toWrite);
+            } catch (Exception e) {
+                System.err.println("Failed to write output JSON to '" + outputPath + "': " + e.getMessage());
+                return 1;
+            }
+        }
+
         return 0;
     }
 

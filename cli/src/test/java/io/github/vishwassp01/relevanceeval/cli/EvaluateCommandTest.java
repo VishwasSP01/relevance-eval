@@ -16,7 +16,8 @@ class EvaluateCommandTest {
     void runsSuccessfullyWithValidJudgmentFileAndReturnsExitCodeZero() {
         Path judgmentFile = resolveTestResource("sample-judgments.yaml");
 
-        int exitCode = new CommandLine(new EvaluateCommand()).execute(
+        int exitCode = new CommandLine(new RelevanceEvalCommand()).execute(
+                "evaluate",
                 "--judgments", judgmentFile.toString(),
                 "--metrics", "ndcg@10,precision@10",
                 "--size", "10",
