@@ -27,6 +27,13 @@ import java.util.Set;
  * Mean Precision@K = (1 / |Queries|) * sum(Precision@K(q))
  * </pre>
  * <p>
+ * <b>Denominator and Small Judgment Sets:</b>
+ * Note that the denominator is explicitly {@code k}, not the number of results returned by the search
+ * backend. As a consequence, precision will appear low when the judgment set is small relative to {@code k}.
+ * For example, if a query only has 2 judged relevant documents in the entire judgment set, the maximum
+ * possible Precision@10 is {@code 2 / 10 = 0.20}, even if the search backend returns both relevant documents
+ * at ranks 1 and 2.
+ * <p>
  * <b>Handling of Unjudged Documents:</b>
  * Any retrieved document that does not have an explicit judgment in the {@link JudgmentSet} for that query
  * is treated as non-relevant (i.e. having an implicit grade of 0). It contributes 0 to the count of

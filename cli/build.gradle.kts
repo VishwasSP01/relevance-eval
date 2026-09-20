@@ -10,6 +10,7 @@ java {
 
 dependencies {
     implementation(project(":core"))
+    implementation("info.picocli:picocli:4.7.6")
 
     testImplementation(platform("org.junit:junit-bom:5.10.3"))
     testImplementation("org.junit.jupiter:junit-jupiter")
@@ -18,7 +19,7 @@ dependencies {
 }
 
 application {
-    mainClass.set("com.relevanceeval.cli.Main")
+    mainClass.set("io.github.vishwassp01.relevanceeval.cli.EvaluateCommand")
 }
 
 tasks.test {
