@@ -1,0 +1,5 @@
+name: invalid-grade-test
+queries:
+  - query: "waterproof jacket"
+    judgments:
+      - { id: "SKU-1042", grade: 5 }

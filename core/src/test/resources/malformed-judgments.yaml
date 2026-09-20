@@ -1,0 +1,4 @@
+name: malformed-test
+queries:
+  - query: "broken query"
+    judgments: [broken yaml: {unclosed bracket

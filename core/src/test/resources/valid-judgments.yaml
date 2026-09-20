@@ -1,0 +1,9 @@
+name: product-search-baseline
+queries:
+  - query: "waterproof jacket"
+    judgments:
+      - { id: "SKU-1042", grade: 3 }
+      - { id: "SKU-8891", grade: 2 }
+  - query: "running shoes"
+    judgments:
+      - { id: "SKU-2201", grade: 3 }
