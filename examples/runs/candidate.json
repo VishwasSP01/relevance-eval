@@ -1,0 +1,10 @@
+{
+  "metricName" : "NDCG@10",
+  "overallValue" : 0.9974762177102547,
+  "perQueryValues" : {
+    "hiking boots" : 1.0,
+    "travel backpack" : 1.0,
+    "running shoes" : 1.0,
+    "duffel bag" : 0.9899048708410192
+  }
+}

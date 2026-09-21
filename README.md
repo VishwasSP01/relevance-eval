@@ -99,6 +99,10 @@ FAILURE: One or more queries regressed by more than threshold 0.0500
 
 The command exits with code 1 when any query regresses beyond the threshold, allowing you to fail a CI build on relevance regressions.
 
+## See it in CI
+
+The `relevance-example` job in GitHub Actions runs the tool against [`examples/runs/baseline.json`](examples/runs/baseline.json) and [`examples/runs/candidate.json`](examples/runs/candidate.json) on every push, publishing the comparison results as a JUnit test report in the Actions summary. Check the **Actions** tab to see live test summaries.
+
 ## Plugging in Your Own Search Engine
 
 Implementing the `SearchBackend` interface is all it takes to evaluate any search engine:
