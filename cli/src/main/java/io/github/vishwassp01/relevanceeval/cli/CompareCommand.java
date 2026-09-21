@@ -51,6 +51,12 @@ public class CompareCommand implements Callable<Integer> {
     )
     private double threshold = 0.1;
 
+    @Option(
+            names = {"--junit-xml"},
+            description = "Path to write the comparison results as a JUnit XML report."
+    )
+    private Path junitXmlPath;
+
     public static void main(String[] args) {
         int exitCode = new CommandLine(new CompareCommand()).execute(args);
         System.exit(exitCode);
@@ -104,6 +110,15 @@ public class CompareCommand implements Callable<Integer> {
                 if (Math.abs(regressed.delta()) > threshold) {
                     regressionExceeded = true;
                 }
+            }
+        }
+
+        if (junitXmlPath != null) {
+            try {
+                JUnitXmlReportWriter.writeReport(comparisons, threshold, junitXmlPath);
+            } catch (Exception e) {
+                System.err.println("Failed to write JUnit XML report to '" + junitXmlPath + "': " + e.getMessage());
+                return 1;
             }
         }
 
