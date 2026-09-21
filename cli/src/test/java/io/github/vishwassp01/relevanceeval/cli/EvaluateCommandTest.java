@@ -27,6 +27,21 @@ class EvaluateCommandTest {
         assertThat(exitCode).isEqualTo(0);
     }
 
+    @Test
+    void runsSuccessfullyWithRecallAndMrrMetrics() {
+        Path judgmentFile = resolveTestResource("sample-judgments.yaml");
+
+        int exitCode = new CommandLine(new RelevanceEvalCommand()).execute(
+                "evaluate",
+                "--judgments", judgmentFile.toString(),
+                "--metrics", "recall@10,mrr",
+                "--size", "10",
+                "--demo"
+        );
+
+        assertThat(exitCode).isEqualTo(0);
+    }
+
     private Path resolveTestResource(String filename) {
         URL resource = getClass().getClassLoader().getResource(filename);
         if (resource != null) {

@@ -4,9 +4,11 @@ import io.github.vishwassp01.relevanceeval.backend.InMemorySearchBackend;
 import io.github.vishwassp01.relevanceeval.backend.SearchBackend;
 import io.github.vishwassp01.relevanceeval.io.JudgmentSetException;
 import io.github.vishwassp01.relevanceeval.io.JudgmentSetLoader;
+import io.github.vishwassp01.relevanceeval.metrics.MeanReciprocalRank;
 import io.github.vishwassp01.relevanceeval.metrics.Metric;
 import io.github.vishwassp01.relevanceeval.metrics.NdcgAtK;
 import io.github.vishwassp01.relevanceeval.metrics.PrecisionAtK;
+import io.github.vishwassp01.relevanceeval.metrics.RecallAtK;
 import io.github.vishwassp01.relevanceeval.model.Judgment;
 import io.github.vishwassp01.relevanceeval.model.JudgmentSet;
 import io.github.vishwassp01.relevanceeval.model.MetricResult;
@@ -136,9 +138,13 @@ public class EvaluateCommand implements Callable<Integer> {
 
     private Metric parseMetricSpec(String spec) {
         String trimmed = spec.trim().toLowerCase();
+        if (trimmed.equals("mrr")) {
+            return new MeanReciprocalRank();
+        }
+
         int atIndex = trimmed.indexOf('@');
         if (atIndex == -1) {
-            throw new IllegalArgumentException("Invalid metric spec: '" + spec + "'. Expected format: <name>@<k> (e.g. ndcg@10, precision@10)");
+            throw new IllegalArgumentException("Invalid metric spec: '" + spec + "'. Expected format: <name>@<k> (e.g. ndcg@10, precision@10, recall@10) or 'mrr'");
         }
         String name = trimmed.substring(0, atIndex);
         String kStr = trimmed.substring(atIndex + 1);
@@ -156,7 +162,9 @@ public class EvaluateCommand implements Callable<Integer> {
         return switch (name) {
             case "ndcg" -> new NdcgAtK(k);
             case "precision", "p" -> new PrecisionAtK(k);
-            default -> throw new IllegalArgumentException("Unsupported metric '" + name + "' in spec '" + spec + "'. Supported: ndcg, precision");
+            case "recall", "r" -> new RecallAtK(k);
+            case "mrr" -> new MeanReciprocalRank();
+            default -> throw new IllegalArgumentException("Unsupported metric '" + name + "' in spec '" + spec + "'. Supported: ndcg, precision, recall, mrr");
         };
     }
 
