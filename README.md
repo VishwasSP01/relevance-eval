@@ -4,26 +4,25 @@ Test your search relevance like you test your code.
 
 ## The Problem
 
-Engineers regularly tune search queries, boost fields, or change ranking models without a reliable way to verify whether results improved. Latency regressions get caught immediately by production monitoring, but relevance regressions ship silently because search queries still return HTTP 200 responses. Without automated relevance testing against ground-truth benchmarks, teams find out about ranking bugs only after search conversion drops or users complain.
+Teams change search ranking with no way to know whether results actually improved. Latency regressions get caught by monitoring; relevance regressions ship silently because nothing fails. Without automated testing against relevance benchmarks, ranking bugs only surface after search conversion drops or users complain.
 
 ## Quick Start
 
-Build the project and run the demo evaluation against a sample judgment set:
-
 ```bash
 ./gradlew :cli:installDist
-./cli/build/install/cli/bin/cli evaluate --judgments core/src/test/resources/valid-judgments.yaml --demo
+./cli/build/install/cli/bin/cli evaluate --judgments examples/sample.yaml --demo
 ```
 
 Output:
+
 ```
 ================================================================================
-Evaluation: product-search-baseline (Backend: demo-in-memory, Requested Size: 10)
+Evaluation: demo-judgments (Backend: demo-in-memory, Requested Size: 10)
 ================================================================================
 Metric                      Overall Value
 -----------------------------------------
 NDCG@10                            0.9779
-Precision@10                       0.1500
+Precision@10                       0.2000
 
 Per-Query Breakdown:
 --------------------------------------------------------------------------------
@@ -32,78 +31,77 @@ Query               Metric                   Score
 waterproof jacket   NDCG@10                 0.9558
 waterproof jacket   Precision@10            0.2000
 running shoes       NDCG@10                 1.0000
-running shoes       Precision@10            0.1000
+running shoes       Precision@10            0.2000
 ================================================================================
 ```
 
 ## Judgment File Format
 
-Benchmark datasets are defined as YAML files containing queries and human- or rule-graded document relevance judgments:
-
 ```yaml
-name: product-search-baseline
+name: demo-judgments
 queries:
   - query: "waterproof jacket"
     judgments:
       - { id: "SKU-1042", grade: 3 }
       - { id: "SKU-8891", grade: 2 }
+      - { id: "SKU-3320", grade: 0 }
   - query: "running shoes"
     judgments:
       - { id: "SKU-2201", grade: 3 }
+      - { id: "SKU-5544", grade: 1 }
 ```
 
-Grades range from 0 to 3:
-- **3 (Exact match)**: Fully relevant document that directly satisfies the query intent.
-- **2 (Relevant)**: Good match; satisfies the core need with minor differences.
-- **1 (Marginal)**: Partially relevant or related item.
-- **0 (Irrelevant)**: Not relevant to the query.
+Grades range from 0 (irrelevant) to 3 (exact match), with 1 (marginal) and 2 (relevant) in between.
 
 ## Metrics
 
-- **NDCG@k (Normalized Discounted Cumulative Gain)**: Measures graded ranking quality by placing higher weights on highly relevant documents ranked near the top; unjudged documents receive an implicit grade of 0 and contribute zero gain while still consuming a rank position.
-- **Precision@k**: Measures the fraction of the top-k results that have a relevance grade of at least 1, dividing by the fixed cutoff k; unjudged documents are treated as irrelevant (grade 0) and contribute 0 to the numerator.
+- **NDCG@k**: Measures ranking quality by placing higher weights on highly relevant documents ranked near the top. Unjudged documents are treated as grade 0 (contributing zero gain while taking a rank slot).
+- **Precision@k**: Measures the fraction of the top-k results that are relevant (grade 1 or higher), dividing by k rather than the number of returned results. Unjudged documents are treated as irrelevant (grade 0).
 
 ## Comparing Two Runs
 
 Save evaluation results to JSON from a baseline and a candidate run:
 
 ```bash
-./cli/build/install/cli/bin/cli evaluate --judgments core/src/test/resources/valid-judgments.yaml --demo --metrics ndcg@10 --output baseline.json
-./cli/build/install/cli/bin/cli evaluate --judgments core/src/test/resources/valid-judgments.yaml --demo --metrics ndcg@10 --output candidate.json
+./cli/build/install/cli/bin/cli evaluate --judgments examples/sample.yaml --demo --metrics ndcg@10 --output baseline.json
+./cli/build/install/cli/bin/cli evaluate --judgments examples/sample.yaml --demo --metrics ndcg@10 --output candidate.json
 ```
 
-Then compare them to inspect regressions:
+Compare the two runs:
 
 ```bash
-./cli/build/install/cli/bin/cli compare --baseline baseline.json --candidate candidate.json --threshold 0.10
+./cli/build/install/cli/bin/cli compare --baseline baseline.json --candidate candidate.json --threshold 0.05
 ```
 
-If any query regresses by more than `--threshold` (default 0.1), the command exits with code 1.
+Output when regressions exceed the threshold:
 
-Example output:
 ```
 ================================================================================
 Metric Comparison: NDCG@10
 ================================================================================
 Baseline Overall:      0.9779
-Candidate Overall:     0.8500
-Overall Delta:        -0.1279
+Candidate Overall:     0.8279
+Overall Delta:        -0.1500
 
 Top Regressed Queries (worst-first):
 --------------------------------------------------------------------------------
 Query                   Baseline    Candidate        Delta
 ---------------------------------------------------------
-waterproof jacket         0.9558       0.7000      -0.2558
+waterproof jacket         0.9558       0.6558      -0.3000
 
 Top Improved Queries (best-first):
 --------------------------------------------------------------------------------
   (None)
 ================================================================================
+
+FAILURE: One or more queries regressed by more than threshold 0.0500
 ```
 
-## Backends
+The command exits with code 1 when any query regresses beyond the threshold, allowing you to fail a CI build on relevance regressions.
 
-To evaluate a search system, implement the `SearchBackend` interface from the `core` module:
+## Plugging in Your Own Search Engine
+
+Implementing the `SearchBackend` interface is all it takes to evaluate any search engine:
 
 ```java
 public interface SearchBackend {
@@ -112,23 +110,23 @@ public interface SearchBackend {
 }
 ```
 
-Implementing these two methods is all it takes to evaluate any search system (Elasticsearch, OpenSearch, Solr, Vespa, or a custom in-house engine). The `backend-elasticsearch` module provides an official implementation using the Elasticsearch Java client.
-
 ## Building and Testing
 
-Run unit tests across all modules (does not require Docker):
+Run unit tests (no Docker needed):
+
 ```bash
 ./gradlew test
 ```
 
-Run integration tests against containerized Elasticsearch instances (requires Docker):
+Run integration tests (requires Docker; uses Testcontainers 2.x):
+
 ```bash
-./gradlew integrationTest
+./gradlew :backend-elasticsearch:integrationTest
 ```
 
 ## Status
 
-Early stage. The public API may change.
+Early stage, APIs may change.
 
 ## License
 
