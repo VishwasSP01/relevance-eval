@@ -8,7 +8,7 @@ java {
     }
 }
 
-val testcontainersVersion = "1.20.6"
+val testcontainersVersion = "2.0.5"
 
 dependencies {
     api(project(":core"))
@@ -24,8 +24,8 @@ dependencies {
 
     testImplementation(platform("org.testcontainers:testcontainers-bom:$testcontainersVersion"))
     testImplementation("org.testcontainers:testcontainers")
-    testImplementation("org.testcontainers:elasticsearch")
-    testImplementation("org.testcontainers:junit-jupiter")
+    testImplementation("org.testcontainers:testcontainers-elasticsearch")
+    testImplementation("org.testcontainers:testcontainers-junit-jupiter")
 }
 
 tasks.test {

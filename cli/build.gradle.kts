@@ -24,6 +24,10 @@ application {
     mainClass.set("io.github.vishwassp01.relevanceeval.cli.RelevanceEvalCommand")
 }
 
+tasks.named<JavaExec>("run") {
+    workingDir = rootProject.projectDir
+}
+
 tasks.test {
     useJUnitPlatform()
 }

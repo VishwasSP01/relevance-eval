@@ -32,7 +32,8 @@ class ElasticsearchBackendIT {
 
     @Container
     private static final ElasticsearchContainer CONTAINER =
-            new ElasticsearchContainer(ELASTICSEARCH_IMAGE);
+            new ElasticsearchContainer(ELASTICSEARCH_IMAGE)
+                    .withEnv("xpack.security.enabled", "false");
 
     private static RestClient restClient;
     private static ElasticsearchClient client;
