@@ -2,6 +2,8 @@
 
 Test your search relevance like you test your code.
 
+Java 21 · Scala 3 · Gradle
+
 ## The Problem
 
 Teams change search ranking with no way to know whether results actually improved. Latency regressions get caught by monitoring; relevance regressions ship silently because nothing fails. Without automated testing against relevance benchmarks, ranking bugs only surface after search conversion drops or users complain.
@@ -113,6 +115,65 @@ public interface SearchBackend {
     String name();
 }
 ```
+
+## Using the Scala API
+
+The `core-scala` module provides native Scala 3 case classes, an `Either`-based loader, and Cats Effect integration.
+
+### Dependency
+
+In Gradle (`build.gradle.kts`):
+
+```kotlin
+implementation("com.relevanceeval:core-scala:0.1.0-SNAPSHOT")
+```
+
+Or in sbt:
+
+```scala
+libraryDependencies += "com.relevanceeval" %% "core-scala" % "0.1.0-SNAPSHOT"
+```
+
+### Loading Judgments and Running an Evaluation
+
+```scala
+import cats.effect.{IO, IOApp}
+import io.github.vishwassp01.relevanceeval.metrics.{NdcgAtK, PrecisionAtK}
+import io.github.vishwassp01.relevanceeval.scala.RelevanceEval
+import io.github.vishwassp01.relevanceeval.scala.backend.InMemorySearchBackend
+import io.github.vishwassp01.relevanceeval.scala.io.JudgmentSetLoader
+import io.github.vishwassp01.relevanceeval.scala.model.SearchContext
+import java.nio.file.Path
+
+object Main extends IOApp.Simple:
+  def run: IO[Unit] =
+    for
+      judgments <- IO.fromEither(
+        JudgmentSetLoader.load(Path.of("examples/sample.yaml"))
+          .left.map(err => new RuntimeException(err.message))
+      )
+      backend = InMemorySearchBackend(Map(
+        "waterproof jacket" -> List("SKU-1042", "SKU-3320", "SKU-8891"),
+        "running shoes"     -> List("SKU-2201", "SKU-5544")
+      ))
+      metrics = List(new NdcgAtK(10), new PrecisionAtK(10))
+      context = SearchContext("sample-index", 10, Map.empty)
+      results <- RelevanceEval.evaluate(judgments, backend, metrics, context)
+      _       <- IO.println(s"Evaluated ${results.size} metrics across ${judgments.queries.size} queries")
+    yield ()
+```
+
+### Why Either and IO?
+
+- **`Either[LoadError, JudgmentSet]` for File Loading**: Parsing judgment files is a synchronous operation with deterministic failure modes (missing file, malformed syntax, out-of-range grade). Returning `Either` makes errors explicit in the type system without relying on runtime exceptions.
+- **`IO[List[MetricResult]]` for Evaluation**: Querying search engines involves asynchronous network I/O and resource management. `IO` encapsulates these side effects, enabling safe concurrency controls (such as bounded parallel query execution with `parTraverseN`) without thread starvation or unhandled failures.
+
+## Modules
+
+- `core`: Core domain model, relevance metrics, YAML loader, and search backend interfaces.
+- `core-scala`: Native Scala 3 domain model, Cats Effect concurrency, and `Either`-based loader.
+- `backend-elasticsearch`: Elasticsearch backend implementation and Testcontainers integration tests.
+- `cli`: Command-line interface for running evaluations and comparing benchmark runs.
 
 ## Building and Testing
 

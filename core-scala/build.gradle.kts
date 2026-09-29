@@ -1,5 +1,6 @@
 plugins {
     scala
+    application
 }
 
 java {
@@ -24,4 +25,12 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+application {
+    mainClass.set("io.github.vishwassp01.relevanceeval.scala.example.ScalaExample")
+}
+
+tasks.named<JavaExec>("run") {
+    workingDir = rootProject.projectDir
 }
