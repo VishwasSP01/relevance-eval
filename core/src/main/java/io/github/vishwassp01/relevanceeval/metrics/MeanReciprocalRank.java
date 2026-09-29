@@ -62,18 +62,16 @@ public class MeanReciprocalRank implements Metric {
                 gradeByDocId.put(j.docId(), Math.max(gradeByDocId.getOrDefault(j.docId(), 0), j.grade()));
             }
 
-            List<SearchResult> results = resultsByQuery.get(query);
+            List<SearchResult> results = Metric.normalizeResults(resultsByQuery.get(query));
             double rr = 0.0;
 
-            if (results != null) {
-                for (int i = 0; i < results.size(); i++) {
-                    SearchResult result = results.get(i);
-                    int grade = gradeByDocId.getOrDefault(result.docId(), 0);
-                    if (grade >= 1) {
-                        int rank = (result.rank() > 0) ? result.rank() : (i + 1);
-                        rr = 1.0 / (double) rank;
-                        break;
-                    }
+            for (int i = 0; i < results.size(); i++) {
+                SearchResult result = results.get(i);
+                int grade = gradeByDocId.getOrDefault(result.docId(), 0);
+                if (grade >= 1) {
+                    int rank = i + 1;
+                    rr = 1.0 / (double) rank;
+                    break;
                 }
             }
 

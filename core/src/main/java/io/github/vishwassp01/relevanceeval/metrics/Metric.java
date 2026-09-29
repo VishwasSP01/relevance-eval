@@ -51,4 +51,15 @@ public interface Metric {
 
         return computeFrom(judgments, resultsByQuery);
     }
+
+    /**
+     * Normalizes search results by deduplicating by document ID (keeping the first occurrence)
+     * and sorting by score descending with document ID ascending as the tie-breaker.
+     *
+     * @param results the raw search results list, may be null or empty
+     * @return an unmodifiable list of normalized results with sequential 1-based ranks
+     */
+    static List<SearchResult> normalizeResults(List<SearchResult> results) {
+        return ResultNormalizer.normalize(results);
+    }
 }

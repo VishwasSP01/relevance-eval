@@ -74,8 +74,8 @@ public class PrecisionAtK implements Metric {
                 gradeByDocId.put(j.docId(), Math.max(gradeByDocId.getOrDefault(j.docId(), 0), j.grade()));
             }
 
-            List<SearchResult> results = resultsByQuery.get(query);
-            int evalLimit = (results != null) ? Math.min(k, results.size()) : 0;
+            List<SearchResult> results = Metric.normalizeResults(resultsByQuery.get(query));
+            int evalLimit = Math.min(k, results.size());
 
             int relevantCount = 0;
             for (int i = 0; i < evalLimit; i++) {

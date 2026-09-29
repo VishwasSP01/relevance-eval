@@ -94,8 +94,8 @@ public class NdcgAtK implements Metric {
             }
 
             // Calculate DCG@K over top k returned results
-            List<SearchResult> results = resultsByQuery.get(query);
-            int evalLimit = (results != null) ? Math.min(k, results.size()) : 0;
+            List<SearchResult> results = Metric.normalizeResults(resultsByQuery.get(query));
+            int evalLimit = Math.min(k, results.size());
 
             double dcg = 0.0;
             for (int i = 0; i < evalLimit; i++) {

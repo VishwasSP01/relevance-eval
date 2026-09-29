@@ -73,8 +73,8 @@ public class JudgedAtK implements Metric {
                 judgedDocIds.add(j.docId());
             }
 
-            List<SearchResult> results = resultsByQuery.get(query);
-            if (results == null || results.isEmpty()) {
+            List<SearchResult> results = Metric.normalizeResults(resultsByQuery.get(query));
+            if (results.isEmpty()) {
                 perQueryValues.put(query, 0.0);
                 continue;
             }

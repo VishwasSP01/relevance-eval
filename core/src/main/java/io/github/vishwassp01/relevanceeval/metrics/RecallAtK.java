@@ -82,8 +82,8 @@ public class RecallAtK implements Metric {
             if (relevantDocIds.isEmpty()) {
                 recall = 0.0;
             } else {
-                List<SearchResult> results = resultsByQuery.get(query);
-                int evalLimit = (results != null) ? Math.min(k, results.size()) : 0;
+                List<SearchResult> results = Metric.normalizeResults(resultsByQuery.get(query));
+                int evalLimit = Math.min(k, results.size());
 
                 Set<String> retrievedRelevant = new HashSet<>();
                 for (int i = 0; i < evalLimit; i++) {
