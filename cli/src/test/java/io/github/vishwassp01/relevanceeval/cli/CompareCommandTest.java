@@ -221,4 +221,158 @@ class CompareCommandTest {
         }
         return Path.of("cli/src/test/resources", filename);
     }
+
+    @Test
+    void printsSignificanceInformationInConsoleOutput() throws IOException {
+        Path baselinePath = tempDir.resolve("sig-baseline.json");
+        Path candidatePath = tempDir.resolve("sig-candidate.json");
+
+        ObjectMapper mapper = new ObjectMapper();
+        MetricResult baseline = new MetricResult("NDCG@10", 0.65, Map.of(
+                "q1", 0.80,
+                "q2", 0.50
+        ));
+        mapper.writeValue(baselinePath.toFile(), baseline);
+
+        MetricResult candidate = new MetricResult("NDCG@10", 0.65, Map.of(
+                "q1", 0.80,
+                "q2", 0.50
+        ));
+        mapper.writeValue(candidatePath.toFile(), candidate);
+
+        java.io.ByteArrayOutputStream outContent = new java.io.ByteArrayOutputStream();
+        java.io.PrintStream originalOut = System.out;
+        try {
+            System.setOut(new java.io.PrintStream(outContent));
+            int exitCode = new CommandLine(new RelevanceEvalCommand()).execute(
+                    "compare",
+                    "--baseline", baselinePath.toString(),
+                    "--candidate", candidatePath.toString(),
+                    "--significance-level", "0.05",
+                    "--trials", "2000"
+            );
+            assertThat(exitCode).isEqualTo(0);
+        } finally {
+            System.setOut(originalOut);
+        }
+
+        String output = outContent.toString();
+        assertThat(output)
+                .contains("Significance:        p = 1.0000  (n = 2 queries, 2000 trials)")
+                .contains("Not significant \u2014 this change is within noise");
+    }
+
+    @Test
+    void printsSignificantWhenPValueBelowAlpha() throws IOException {
+        Path baselinePath = tempDir.resolve("sig-sub-baseline.json");
+        Path candidatePath = tempDir.resolve("sig-sub-candidate.json");
+
+        Map<String, Double> baseMap = new HashMap<>();
+        Map<String, Double> candMap = new HashMap<>();
+        for (int i = 1; i <= 20; i++) {
+            baseMap.put("q" + i, 0.30);
+            candMap.put("q" + i, 0.90);
+        }
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.writeValue(baselinePath.toFile(), new MetricResult("NDCG@10", 0.30, baseMap));
+        mapper.writeValue(candidatePath.toFile(), new MetricResult("NDCG@10", 0.90, candMap));
+
+        java.io.ByteArrayOutputStream outContent = new java.io.ByteArrayOutputStream();
+        java.io.PrintStream originalOut = System.out;
+        try {
+            System.setOut(new java.io.PrintStream(outContent));
+            int exitCode = new CommandLine(new RelevanceEvalCommand()).execute(
+                    "compare",
+                    "--baseline", baselinePath.toString(),
+                    "--candidate", candidatePath.toString(),
+                    "--significance-level", "0.05",
+                    "--trials", "1000"
+            );
+            assertThat(exitCode).isEqualTo(0);
+        } finally {
+            System.setOut(originalOut);
+        }
+
+        String output = outContent.toString();
+        assertThat(output)
+                .contains("Significance:        p =")
+                .contains("(n = 20 queries, 1000 trials)")
+                .contains("Significant at alpha = 0.05");
+    }
+
+    @Test
+    void failsOnSignificantRegressionWhenFlagEnabled() throws IOException {
+        Path baselinePath = tempDir.resolve("reg-baseline.json");
+        Path candidatePath = tempDir.resolve("reg-candidate.json");
+
+        Map<String, Double> baseMap = new HashMap<>();
+        Map<String, Double> candMap = new HashMap<>();
+        for (int i = 1; i <= 20; i++) {
+            baseMap.put("query" + i, 0.80);
+            candMap.put("query" + i, 0.30); // each query regresses by 0.50
+        }
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.writeValue(baselinePath.toFile(), new MetricResult("NDCG@10", 0.80, baseMap));
+        mapper.writeValue(candidatePath.toFile(), new MetricResult("NDCG@10", 0.30, candMap));
+
+        // When flag is NOT passed and threshold is 1.0 (so per-query gate passes): exit code 0
+        int exitWithoutFlag = new CommandLine(new RelevanceEvalCommand()).execute(
+                "compare",
+                "--baseline", baselinePath.toString(),
+                "--candidate", candidatePath.toString(),
+                "--threshold", "1.0",
+                "--trials", "1000"
+        );
+        assertThat(exitWithoutFlag).isEqualTo(0);
+
+        // When flag IS passed and threshold is 1.0: fails due to statistically significant overall regression
+        int exitWithFlag = new CommandLine(new RelevanceEvalCommand()).execute(
+                "compare",
+                "--baseline", baselinePath.toString(),
+                "--candidate", candidatePath.toString(),
+                "--threshold", "1.0",
+                "--trials", "1000",
+                "--fail-on-significant-regression"
+        );
+        assertThat(exitWithFlag).isEqualTo(1);
+    }
+
+    @Test
+    void existingPerQueryGateStillBehavesSameRegardlessOfSignificance() throws IOException {
+        Path baselinePath = tempDir.resolve("gate-baseline.json");
+        Path candidatePath = tempDir.resolve("gate-candidate.json");
+
+        MetricResult baseline = new MetricResult("NDCG@10", 0.50, Map.of(
+                "q-regressed", 0.80,
+                "q-improved", 0.20
+        ));
+        MetricResult candidate = new MetricResult("NDCG@10", 0.60, Map.of(
+                "q-regressed", 0.55, // -0.25 regression
+                "q-improved", 0.65  // +0.45 improvement (overall delta is +0.10)
+        ));
+
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.writeValue(baselinePath.toFile(), baseline);
+        mapper.writeValue(candidatePath.toFile(), candidate);
+
+        // Without flag: still fails because q-regressed exceeded 0.1
+        int exitWithoutFlag = new CommandLine(new RelevanceEvalCommand()).execute(
+                "compare",
+                "--baseline", baselinePath.toString(),
+                "--candidate", candidatePath.toString(),
+                "--threshold", "0.1"
+        );
+        assertThat(exitWithoutFlag).isEqualTo(1);
+
+        // With flag: still fails because per-query gate triggered
+        int exitWithFlag = new CommandLine(new RelevanceEvalCommand()).execute(
+                "compare",
+                "--baseline", baselinePath.toString(),
+                "--candidate", candidatePath.toString(),
+                "--threshold", "0.1",
+                "--fail-on-significant-regression"
+        );
+        assertThat(exitWithFlag).isEqualTo(1);
+    }
 }
+

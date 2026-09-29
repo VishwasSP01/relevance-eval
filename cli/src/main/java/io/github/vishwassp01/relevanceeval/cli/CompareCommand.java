@@ -6,6 +6,8 @@ import io.github.vishwassp01.relevanceeval.diff.ComparisonResult;
 import io.github.vishwassp01.relevanceeval.diff.QueryDelta;
 import io.github.vishwassp01.relevanceeval.diff.RunComparator;
 import io.github.vishwassp01.relevanceeval.model.MetricResult;
+import io.github.vishwassp01.relevanceeval.stats.PairedRandomizationTest;
+import io.github.vishwassp01.relevanceeval.stats.SignificanceResult;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -21,12 +23,12 @@ import java.util.stream.Collectors;
 
 /**
  * CLI subcommand to compare two evaluation runs (baseline vs candidate),
- * printing overall changes, top regressed queries, and top improved queries.
+ * printing overall changes, statistical significance, top regressed queries, and top improved queries.
  */
 @Command(
         name = "compare",
         mixinStandardHelpOptions = true,
-        description = "Compares two evaluation run results, detecting regressions and improvements."
+        description = "Compares two evaluation run results, detecting regressions, improvements, and statistical significance."
 )
 public class CompareCommand implements Callable<Integer> {
 
@@ -50,6 +52,26 @@ public class CompareCommand implements Callable<Integer> {
             description = "Regression threshold above which the command exits with code 1 (default: 0.1)."
     )
     private double threshold = 0.1;
+
+    @Option(
+            names = {"--significance-level"},
+            defaultValue = "0.05",
+            description = "Significance level (alpha) for statistical testing (default: 0.05)."
+    )
+    private double significanceLevel = 0.05;
+
+    @Option(
+            names = {"--trials"},
+            defaultValue = "10000",
+            description = "Number of trials for paired randomization test (default: 10000)."
+    )
+    private int trials = 10000;
+
+    @Option(
+            names = {"--fail-on-significant-regression"},
+            description = "Exit with code 1 if the overall delta is negative and statistically significant."
+    )
+    private boolean failOnSignificantRegression;
 
     @Option(
             names = {"--junit-xml"},
@@ -84,7 +106,7 @@ public class CompareCommand implements Callable<Integer> {
         Map<String, MetricResult> candidateMap = candidateRuns.stream()
                 .collect(Collectors.toMap(m -> m.metricName().toLowerCase(), m -> m, (a, b) -> a));
 
-        RunComparator comparator = new RunComparator();
+        RunComparator comparator = new RunComparator(trials, PairedRandomizationTest.DEFAULT_SEED);
         List<ComparisonResult> comparisons = new ArrayList<>();
 
         for (MetricResult baseMetric : baselineRuns) {
@@ -102,6 +124,8 @@ public class CompareCommand implements Callable<Integer> {
         }
 
         boolean regressionExceeded = false;
+        boolean significantRegression = false;
+
         for (ComparisonResult comparison : comparisons) {
             printComparisonTable(comparison);
 
@@ -109,6 +133,12 @@ public class CompareCommand implements Callable<Integer> {
             for (QueryDelta regressed : comparison.regressed()) {
                 if (Math.abs(regressed.delta()) > threshold) {
                     regressionExceeded = true;
+                }
+            }
+
+            if (failOnSignificantRegression && comparison.significance() != null) {
+                if (comparison.overallDelta() < 0.0 && comparison.significance().pValue() <= significanceLevel) {
+                    significantRegression = true;
                 }
             }
         }
@@ -124,6 +154,12 @@ public class CompareCommand implements Callable<Integer> {
 
         if (regressionExceeded) {
             System.err.printf("%nFAILURE: One or more queries regressed by more than threshold %.4f%n", threshold);
+        }
+        if (significantRegression) {
+            System.err.printf("%nFAILURE: Statistically significant overall regression detected (p <= %s)%n", formatAlpha(significanceLevel));
+        }
+
+        if (regressionExceeded || significantRegression) {
             return 1;
         }
 
@@ -159,6 +195,17 @@ public class CompareCommand implements Callable<Integer> {
         System.out.printf("Baseline Overall:  %10.4f%n", comparison.baselineOverall());
         System.out.printf("Candidate Overall: %10.4f%n", comparison.candidateOverall());
         System.out.printf("Overall Delta:     %+10.4f%n%n", comparison.overallDelta());
+
+        SignificanceResult sig = comparison.significance();
+        if (sig != null) {
+            System.out.printf("Significance:        p = %.4f  (n = %d queries, %d trials)%n",
+                    sig.pValue(), sig.sampleSize(), sig.trials());
+            if (sig.pValue() <= significanceLevel) {
+                System.out.printf("                     Significant at alpha = %s%n%n", formatAlpha(significanceLevel));
+            } else {
+                System.out.printf("                     Not significant \u2014 this change is within noise%n%n");
+            }
+        }
 
         // Top regressed
         System.out.println("Top Regressed Queries (worst-first):");
@@ -207,5 +254,12 @@ public class CompareCommand implements Callable<Integer> {
         for (QueryDelta delta : deltas) {
             System.out.printf(formatRow, delta.query(), delta.baselineValue(), delta.candidateValue(), delta.delta());
         }
+    }
+
+    private static String formatAlpha(double alpha) {
+        if (alpha == (long) alpha) {
+            return String.format("%d", (long) alpha);
+        }
+        return String.valueOf(alpha);
     }
 }

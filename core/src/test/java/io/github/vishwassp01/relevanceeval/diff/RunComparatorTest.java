@@ -138,4 +138,24 @@ class RunComparatorTest {
         assertThat(result.regressed()).extracting(QueryDelta::query)
                 .containsExactly("reg-severe", "reg-mild");
     }
+
+    @Test
+    void computesSignificanceResultFromQueryMaps() {
+        MetricResult baseline = new MetricResult("NDCG@10", 0.50, Map.of(
+                "q1", 0.50,
+                "q2", 0.60
+        ));
+        MetricResult candidate = new MetricResult("NDCG@10", 0.70, Map.of(
+                "q1", 0.70,
+                "q2", 0.80
+        ));
+
+        ComparisonResult result = comparator.compare(baseline, candidate);
+
+        assertThat(result.significance()).isNotNull();
+        assertThat(result.significance().sampleSize()).isEqualTo(2);
+        assertThat(result.significance().meanDelta()).isCloseTo(0.20, within(1e-9));
+        assertThat(result.significance().pValue()).isBetween(0.0, 1.0);
+    }
 }
+

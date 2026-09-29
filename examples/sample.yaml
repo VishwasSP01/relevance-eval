@@ -5,7 +5,138 @@ queries:
       - { id: "SKU-1042", grade: 3 }
       - { id: "SKU-8891", grade: 2 }
       - { id: "SKU-3320", grade: 0 }
+      - { id: "SKU-4411", grade: 1 }
   - query: "running shoes"
     judgments:
       - { id: "SKU-2201", grade: 3 }
-      - { id: "SKU-5544", grade: 1 }
+      - { id: "SKU-5544", grade: 2 }
+      - { id: "SKU-7712", grade: 1 }
+      - { id: "SKU-9901", grade: 0 }
+  - query: "wireless headphones"
+    judgments:
+      - { id: "SKU-3011", grade: 3 }
+      - { id: "SKU-3012", grade: 2 }
+      - { id: "SKU-3013", grade: 2 }
+      - { id: "SKU-3014", grade: 1 }
+      - { id: "SKU-3015", grade: 0 }
+  - query: "office chair"
+    judgments:
+      - { id: "SKU-4011", grade: 3 }
+      - { id: "SKU-4012", grade: 2 }
+      - { id: "SKU-4013", grade: 1 }
+      - { id: "SKU-4014", grade: 0 }
+  - query: "coffee grinder"
+    judgments:
+      - { id: "SKU-5011", grade: 3 }
+      - { id: "SKU-5012", grade: 3 }
+      - { id: "SKU-5013", grade: 2 }
+      - { id: "SKU-5014", grade: 1 }
+      - { id: "SKU-5015", grade: 0 }
+  - query: "mechanical keyboard"
+    judgments:
+      - { id: "SKU-6011", grade: 3 }
+      - { id: "SKU-6012", grade: 2 }
+      - { id: "SKU-6013", grade: 1 }
+      - { id: "SKU-6014", grade: 0 }
+  - query: "standing desk"
+    judgments:
+      - { id: "SKU-7011", grade: 3 }
+      - { id: "SKU-7012", grade: 2 }
+      - { id: "SKU-7013", grade: 1 }
+      - { id: "SKU-7014", grade: 0 }
+      - { id: "SKU-7015", grade: 0 }
+  - query: "yoga mat"
+    judgments:
+      - { id: "SKU-8011", grade: 3 }
+      - { id: "SKU-8012", grade: 2 }
+      - { id: "SKU-8013", grade: 1 }
+      - { id: "SKU-8014", grade: 0 }
+  - query: "espresso machine"
+    judgments:
+      - { id: "SKU-9011", grade: 3 }
+      - { id: "SKU-9012", grade: 2 }
+      - { id: "SKU-9013", grade: 2 }
+      - { id: "SKU-9014", grade: 1 }
+      - { id: "SKU-9015", grade: 0 }
+  - query: "hiking boots"
+    judgments:
+      - { id: "SKU-1111", grade: 3 }
+      - { id: "SKU-1112", grade: 2 }
+      - { id: "SKU-1113", grade: 1 }
+      - { id: "SKU-1114", grade: 0 }
+  - query: "cast iron skillet"
+    judgments:
+      - { id: "SKU-1211", grade: 3 }
+      - { id: "SKU-1212", grade: 3 }
+      - { id: "SKU-1213", grade: 2 }
+      - { id: "SKU-1214", grade: 0 }
+  - query: "air purifier"
+    judgments:
+      - { id: "SKU-1311", grade: 3 }
+      - { id: "SKU-1312", grade: 2 }
+      - { id: "SKU-1313", grade: 1 }
+      - { id: "SKU-1314", grade: 0 }
+      - { id: "SKU-1315", grade: 0 }
+  - query: "chef knife"
+    judgments:
+      - { id: "SKU-1411", grade: 3 }
+      - { id: "SKU-1412", grade: 2 }
+      - { id: "SKU-1413", grade: 2 }
+      - { id: "SKU-1414", grade: 1 }
+  - query: "laptop backpack"
+    judgments:
+      - { id: "SKU-1511", grade: 3 }
+      - { id: "SKU-1512", grade: 2 }
+      - { id: "SKU-1513", grade: 1 }
+      - { id: "SKU-1514", grade: 0 }
+  - query: "gaming mouse"
+    judgments:
+      - { id: "SKU-1611", grade: 3 }
+      - { id: "SKU-1612", grade: 2 }
+      - { id: "SKU-1613", grade: 1 }
+      - { id: "SKU-1614", grade: 0 }
+      - { id: "SKU-1615", grade: 0 }
+  - query: "electric toothbrush"
+    judgments:
+      - { id: "SKU-1711", grade: 3 }
+      - { id: "SKU-1712", grade: 2 }
+      - { id: "SKU-1713", grade: 1 }
+      - { id: "SKU-1714", grade: 0 }
+  - query: "bluetooth speaker"
+    judgments:
+      - { id: "SKU-1811", grade: 3 }
+      - { id: "SKU-1812", grade: 2 }
+      - { id: "SKU-1813", grade: 2 }
+      - { id: "SKU-1814", grade: 1 }
+      - { id: "SKU-1815", grade: 0 }
+  - query: "fleece pullover"
+    judgments:
+      - { id: "SKU-1911", grade: 3 }
+      - { id: "SKU-1912", grade: 2 }
+      - { id: "SKU-1913", grade: 1 }
+      - { id: "SKU-1914", grade: 0 }
+  - query: "trail running socks"
+    judgments:
+      - { id: "SKU-2011", grade: 3 }
+      - { id: "SKU-2012", grade: 2 }
+      - { id: "SKU-2013", grade: 1 }
+      - { id: "SKU-2014", grade: 0 }
+  - query: "water bottle"
+    judgments:
+      - { id: "SKU-2111", grade: 3 }
+      - { id: "SKU-2112", grade: 2 }
+      - { id: "SKU-2113", grade: 1 }
+      - { id: "SKU-2114", grade: 0 }
+  - query: "ceramic mug"
+    judgments:
+      - { id: "SKU-2211", grade: 3 }
+      - { id: "SKU-2212", grade: 2 }
+      - { id: "SKU-2213", grade: 1 }
+      - { id: "SKU-2214", grade: 0 }
+  - query: "duffel bag"
+    judgments:
+      - { id: "SKU-2311", grade: 3 }
+      - { id: "SKU-2312", grade: 2 }
+      - { id: "SKU-2313", grade: 1 }
+      - { id: "SKU-2314", grade: 0 }
+      - { id: "SKU-2315", grade: 0 }

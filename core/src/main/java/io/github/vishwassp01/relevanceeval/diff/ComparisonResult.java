@@ -1,5 +1,7 @@
 package io.github.vishwassp01.relevanceeval.diff;
 
+import io.github.vishwassp01.relevanceeval.stats.SignificanceResult;
+
 import java.util.List;
 
 /**
@@ -20,6 +22,7 @@ import java.util.List;
  * @param regressed        queries with negative delta, sorted ascending by delta (worst-first)
  * @param unchanged        queries with no significant change (|delta| &lt; 1e-9)
  * @param onlyInOne        queries present in one run but not the other
+ * @param significance     the statistical significance result between the two runs
  */
 public record ComparisonResult(
         String metricName,
@@ -28,7 +31,8 @@ public record ComparisonResult(
         List<QueryDelta> improved,
         List<QueryDelta> regressed,
         List<QueryDelta> unchanged,
-        List<QueryDelta> onlyInOne
+        List<QueryDelta> onlyInOne,
+        SignificanceResult significance
 ) {
 
     public ComparisonResult {
@@ -39,6 +43,18 @@ public record ComparisonResult(
         regressed = List.copyOf(regressed);
         unchanged = List.copyOf(unchanged);
         onlyInOne = List.copyOf(onlyInOne);
+    }
+
+    public ComparisonResult(
+            String metricName,
+            double baselineOverall,
+            double candidateOverall,
+            List<QueryDelta> improved,
+            List<QueryDelta> regressed,
+            List<QueryDelta> unchanged,
+            List<QueryDelta> onlyInOne
+    ) {
+        this(metricName, baselineOverall, candidateOverall, improved, regressed, unchanged, onlyInOne, null);
     }
 
     /**

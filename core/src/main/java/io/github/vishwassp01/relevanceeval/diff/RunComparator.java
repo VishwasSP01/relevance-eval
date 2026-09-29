@@ -1,6 +1,8 @@
 package io.github.vishwassp01.relevanceeval.diff;
 
 import io.github.vishwassp01.relevanceeval.model.MetricResult;
+import io.github.vishwassp01.relevanceeval.stats.PairedRandomizationTest;
+import io.github.vishwassp01.relevanceeval.stats.SignificanceResult;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -12,20 +14,52 @@ import java.util.TreeSet;
 
 /**
  * Compares two evaluation runs for a metric, isolating queries that improved, regressed,
- * or remained unchanged, and highlighting queries that appear only in one run.
+ * or remained unchanged, highlighting queries that appear only in one run, and
+ * computing statistical significance via a paired randomization test.
  */
 public class RunComparator {
 
     public static final double EPSILON = 1e-9;
 
+    private final PairedRandomizationTest randomizationTest;
+    private final int trials;
+    private final long seed;
+
+    public RunComparator() {
+        this(new PairedRandomizationTest(), PairedRandomizationTest.DEFAULT_TRIALS, PairedRandomizationTest.DEFAULT_SEED);
+    }
+
+    public RunComparator(int trials, long seed) {
+        this(new PairedRandomizationTest(), trials, seed);
+    }
+
+    public RunComparator(PairedRandomizationTest randomizationTest, int trials, long seed) {
+        this.randomizationTest = Objects.requireNonNull(randomizationTest, "randomizationTest must not be null");
+        this.trials = trials;
+        this.seed = seed;
+    }
+
     /**
-     * Compares baseline and candidate {@link MetricResult} instances.
+     * Compares baseline and candidate {@link MetricResult} instances using configured trials and seed.
      *
      * @param baseline  the baseline evaluation result, must not be null
      * @param candidate the candidate evaluation result, must not be null
-     * @return a {@link ComparisonResult} detailing overall changes and per-query deltas
+     * @return a {@link ComparisonResult} detailing overall changes, per-query deltas, and statistical significance
      */
     public ComparisonResult compare(MetricResult baseline, MetricResult candidate) {
+        return compare(baseline, candidate, this.trials, this.seed);
+    }
+
+    /**
+     * Compares baseline and candidate {@link MetricResult} instances with explicit trials and seed.
+     *
+     * @param baseline  the baseline evaluation result, must not be null
+     * @param candidate the candidate evaluation result, must not be null
+     * @param trials    the number of randomization trials for statistical significance
+     * @param seed      the seed for reproducibility
+     * @return a {@link ComparisonResult} detailing overall changes, per-query deltas, and statistical significance
+     */
+    public ComparisonResult compare(MetricResult baseline, MetricResult candidate, int trials, long seed) {
         Objects.requireNonNull(baseline, "baseline must not be null");
         Objects.requireNonNull(candidate, "candidate must not be null");
 
@@ -81,6 +115,9 @@ public class RunComparator {
         unchanged.sort(Comparator.comparing(QueryDelta::query));
         onlyInOne.sort(Comparator.comparing(QueryDelta::query));
 
+        // Statistical significance using paired randomization test
+        SignificanceResult significance = randomizationTest.test(baseMap, candMap, trials, seed);
+
         return new ComparisonResult(
                 baseline.metricName(),
                 baseline.overallValue(),
@@ -88,7 +125,8 @@ public class RunComparator {
                 improved,
                 regressed,
                 unchanged,
-                onlyInOne
+                onlyInOne,
+                significance
         );
     }
 }

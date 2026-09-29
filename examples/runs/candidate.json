@@ -1,10 +1,28 @@
 {
-  "metricName" : "NDCG@10",
-  "overallValue" : 0.9974762177102547,
-  "perQueryValues" : {
-    "hiking boots" : 1.0,
-    "travel backpack" : 1.0,
-    "running shoes" : 1.0,
-    "duffel bag" : 0.9899048708410192
+  "metricName": "NDCG@10",
+  "overallValue": 0.7998,
+  "perQueryValues": {
+    "air purifier": 0.725,
+    "bluetooth speaker": 0.75,
+    "cast iron skillet": 0.85,
+    "ceramic mug": 0.875,
+    "chef knife": 0.835,
+    "coffee grinder": 0.785,
+    "duffel bag": 0.835,
+    "electric toothbrush": 0.795,
+    "espresso machine": 0.77,
+    "fleece pullover": 0.785,
+    "gaming mouse": 0.825,
+    "hiking boots": 0.82,
+    "laptop backpack": 0.78,
+    "mechanical keyboard": 0.81,
+    "office chair": 0.715,
+    "running shoes": 0.825,
+    "standing desk": 0.735,
+    "trail running socks": 0.84,
+    "water bottle": 0.865,
+    "waterproof jacket": 0.795,
+    "wireless headphones": 0.76,
+    "yoga mat": 0.82
   }
 }

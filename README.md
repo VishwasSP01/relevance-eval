@@ -47,10 +47,13 @@ queries:
       - { id: "SKU-1042", grade: 3 }
       - { id: "SKU-8891", grade: 2 }
       - { id: "SKU-3320", grade: 0 }
+      - { id: "SKU-4411", grade: 1 }
   - query: "running shoes"
     judgments:
       - { id: "SKU-2201", grade: 3 }
-      - { id: "SKU-5544", grade: 1 }
+      - { id: "SKU-5544", grade: 2 }
+      - { id: "SKU-7712", grade: 1 }
+      - { id: "SKU-9901", grade: 0 }
 ```
 
 Grades range from 0 (irrelevant) to 3 (exact match), with 1 (marginal) and 2 (relevant) in between.
@@ -72,34 +75,60 @@ Save evaluation results to JSON from a baseline and a candidate run:
 Compare the two runs:
 
 ```bash
-./cli/build/install/cli/bin/cli compare --baseline baseline.json --candidate candidate.json --threshold 0.05
+./cli/build/install/cli/bin/cli compare --baseline examples/runs/baseline.json --candidate examples/runs/candidate.json --threshold 0.1
 ```
 
-Output when regressions exceed the threshold:
+Output:
 
 ```
 ================================================================================
 Metric Comparison: NDCG@10
 ================================================================================
-Baseline Overall:      0.9779
-Candidate Overall:     0.8279
-Overall Delta:        -0.1500
+Baseline Overall:      0.7391
+Candidate Overall:     0.7998
+Overall Delta:        +0.0607
+
+Significance:        p = 0.0001  (n = 22 queries, 10000 trials)
+                     Significant at alpha = 0.05
 
 Top Regressed Queries (worst-first):
 --------------------------------------------------------------------------------
-Query                   Baseline    Candidate        Delta
----------------------------------------------------------
-waterproof jacket         0.9558       0.6558      -0.3000
+Query             Baseline    Candidate        Delta
+---------------------------------------------------
+duffel bag          0.8800       0.8350      -0.0450
+ceramic mug         0.9100       0.8750      -0.0350
+yoga mat            0.8500       0.8200      -0.0300
 
 Top Improved Queries (best-first):
 --------------------------------------------------------------------------------
-  (None)
+Query                     Baseline    Candidate        Delta
+-----------------------------------------------------------
+espresso machine            0.6900       0.7700      +0.0800
+laptop backpack             0.7000       0.7800      +0.0800
+mechanical keyboard         0.7300       0.8100      +0.0800
+bluetooth speaker           0.6700       0.7500      +0.0800
+hiking boots                0.7400       0.8200      +0.0800
+wireless headphones         0.6800       0.7600      +0.0800
+coffee grinder              0.7100       0.7850      +0.0750
+electric toothbrush         0.7200       0.7950      +0.0750
+fleece pullover             0.7100       0.7850      +0.0750
+waterproof jacket           0.7200       0.7950      +0.0750
+air purifier                0.6500       0.7250      +0.0750
+chef knife                  0.7600       0.8350      +0.0750
+gaming mouse                0.7500       0.8250      +0.0750
+office chair                0.6400       0.7150      +0.0750
+running shoes               0.7500       0.8250      +0.0750
+standing desk               0.6600       0.7350      +0.0750
+water bottle                0.7900       0.8650      +0.0750
+cast iron skillet           0.7800       0.8500      +0.0700
+trail running socks         0.7700       0.8400      +0.0700
 ================================================================================
-
-FAILURE: One or more queries regressed by more than threshold 0.0500
 ```
 
-The command exits with code 1 when any query regresses beyond the threshold, allowing you to fail a CI build on relevance regressions.
+The comparison output reports a p-value computed using a paired randomization test. In plain English, the p-value tells you whether the difference in search quality between baseline and candidate is real or just random fluctuation. A low p-value (typically below 0.05) indicates the change is statistically significant and unlikely to have happened by luck, whereas a higher p-value means the change is within normal ranking noise.
+
+The command exits with code 1 when any query regresses beyond the `--threshold`. You can also pass `--fail-on-significant-regression` to fail whenever an overall drop is statistically significant.
+
 
 ## See it in CI
 
