@@ -1,0 +1,41 @@
+# Derived from click logs by relevance-eval.
+# These are INFERRED judgments, not human judgments.
+# source: examples/clicks.csv
+# eta: 1.0   propensity floor: 0.1   min impressions: 10
+# generated: 2026-09-29T14:29:53Z
+
+name: click-derived-judgments
+queries:
+  - query: "running shoes"
+    judgments:
+      - { id: "SKU-1001", grade: 1 }
+      - { id: "SKU-1002", grade: 3 }
+      - { id: "SKU-1003", grade: 3 }
+  - query: "waterproof jacket"
+    judgments:
+      - { id: "SKU-2001", grade: 2 }
+      - { id: "SKU-2002", grade: 3 }
+      - { id: "SKU-2003", grade: 0 }
+  - query: "wireless headphones"
+    judgments:
+      - { id: "SKU-3001", grade: 1 }
+      - { id: "SKU-3002", grade: 3 }
+      - { id: "SKU-3003", grade: 0 }
+  - query: "office chair"
+    judgments:
+      - { id: "SKU-4001", grade: 2 }
+      - { id: "SKU-4002", grade: 2 }
+      - { id: "SKU-4003", grade: 0 }
+  - query: "coffee grinder"
+    judgments:
+      - { id: "SKU-5001", grade: 1 }
+      - { id: "SKU-5002", grade: 2 }
+      - { id: "SKU-5003", grade: 3 }
+  - query: "mechanical keyboard"
+    judgments:
+      - { id: "SKU-6001", grade: 2 }
+      - { id: "SKU-6002", grade: 2 }
+      - { id: "SKU-6003", grade: 0 }
+  - query: "standing desk"
+    judgments:
+      - { id: "SKU-7001", grade: 2 }

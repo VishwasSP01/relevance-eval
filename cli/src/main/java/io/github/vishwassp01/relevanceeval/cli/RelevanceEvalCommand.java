@@ -15,6 +15,7 @@ import java.util.concurrent.Callable;
         subcommands = {
                 EvaluateCommand.class,
                 CompareCommand.class,
+                JudgmentsFromClicksCommand.class,
                 HelpCommand.class
         },
         description = "Search relevance evaluation and regression analysis tool."

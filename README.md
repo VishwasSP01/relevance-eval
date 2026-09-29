@@ -137,6 +137,72 @@ The command exits with code 1 when any query regresses beyond the `--threshold`.
 
 The `relevance-example` job in GitHub Actions runs the tool against [`examples/runs/baseline.json`](examples/runs/baseline.json) and [`examples/runs/candidate.json`](examples/runs/candidate.json) on every push, publishing the comparison results as a JUnit test report in the Actions summary. Check the **Actions** tab to see live test summaries.
 
+## Inferring Judgments from Click Logs
+
+Human relevance judgments are expensive and slow to collect. The `judgments-from-clicks` command derives ground-truth judgment files from historical search click logs using Inverse Propensity Scoring (IPS) for position-bias correction:
+
+```bash
+./cli/build/install/cli/bin/cli judgments-from-clicks \
+  --clicks examples/clicks.csv \
+  --output examples/inferred-judgments.yaml \
+  --eta 1.0 \
+  --propensity-floor 0.1 \
+  --min-impressions 10
+```
+
+### Options
+
+- `--clicks <file>`: Required path to the CSV clicks input file (`query,documentId,position,clicked`).
+- `--output <file>`: Required destination path for the generated YAML judgment file.
+- `--eta <double>`: Power-law decay exponent for position examination propensity (default: `1.0`).
+- `--propensity-floor <double>`: Propensity clipping floor capping observation weights to control variance (default: `0.1`).
+- `--min-impressions <int>`: Minimum raw impressions required to retain a `(query, document)` pair (default: `10`).
+
+### Worked Example
+
+Click log CSV (`examples/clicks.csv`):
+
+```csv
+query,documentId,position,clicked
+running shoes,SKU-1001,1,true
+running shoes,SKU-1001,1,false
+running shoes,SKU-1002,9,true
+running shoes,SKU-1002,9,false
+```
+
+Running the command produces a console summary:
+
+```
+Click events read:                             255
+(query, document) pairs found:                 20
+Pairs dropped for being below min impressions: 1
+Grade distribution:                            grade 3: 5, grade 2: 7, grade 1: 3, grade 0: 4
+```
+
+And writes a ready-to-evaluate YAML judgment file with full provenance:
+
+```yaml
+# Derived from click logs by relevance-eval.
+# These are INFERRED judgments, not human judgments.
+# source: examples/clicks.csv
+# eta: 1.0   propensity floor: 0.1   min impressions: 10
+# generated: 2026-09-29T14:28:55Z
+
+name: click-derived-judgments
+queries:
+  - query: "running shoes"
+    judgments:
+      - { id: "SKU-1001", grade: 1 }
+      - { id: "SKU-1002", grade: 3 }
+      - { id: "SKU-1003", grade: 3 }
+```
+
+The output file can be fed directly into `evaluate`:
+
+```bash
+./cli/build/install/cli/bin/cli evaluate --judgments examples/inferred-judgments.yaml --demo
+```
+
 ## Plugging in Your Own Search Engine
 
 Implementing the `SearchBackend` interface is all it takes to evaluate any search engine:
