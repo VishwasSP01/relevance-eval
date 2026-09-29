@@ -62,6 +62,9 @@ Grades range from 0 (irrelevant) to 3 (exact match), with 1 (marginal) and 2 (re
 
 - **NDCG@k**: Measures ranking quality by placing higher weights on highly relevant documents ranked near the top. Unjudged documents are treated as grade 0 (contributing zero gain while taking a rank slot).
 - **Precision@k**: Measures the fraction of the top-k results that are relevant (grade 1 or higher), dividing by k rather than the number of returned results. Unjudged documents are treated as irrelevant (grade 0).
+- **Judged@k**: Measures judgment coverage by calculating what fraction of the top-k returned results appear in your judgment set (including grade 0), dividing by `min(k, results.size())`.
+
+Judged@k reflects how much of what your search engine returned has actually been evaluated. A low value (e.g. below 0.70) indicates that most returned documents are unjudged. Because metrics like NDCG and Precision treat unjudged documents as irrelevant (grade 0), low coverage can severely distort quality scores and hide real improvements. The CLI always computes `judged@k` during evaluation and prints a warning when coverage drops below `--judged-warning-threshold` (default `0.7`).
 
 ## Comparing Two Runs
 
@@ -127,7 +130,7 @@ trail running socks         0.7700       0.8400      +0.0700
 
 The comparison output reports a p-value computed using a paired randomization test. In plain English, the p-value tells you whether the difference in search quality between baseline and candidate is real or just random fluctuation. A low p-value (typically below 0.05) indicates the change is statistically significant and unlikely to have happened by luck, whereas a higher p-value means the change is within normal ranking noise.
 
-The command exits with code 1 when any query regresses beyond the `--threshold`. You can also pass `--fail-on-significant-regression` to fail whenever an overall drop is statistically significant.
+The command exits with code 1 when any query regresses beyond the `--threshold`. You can also pass `--fail-on-significant-regression` to fail whenever an overall drop is statistically significant, or `--html <path>` to generate a self-contained HTML report with metric summaries, significance status, coverage warnings, and query tables.
 
 
 ## See it in CI

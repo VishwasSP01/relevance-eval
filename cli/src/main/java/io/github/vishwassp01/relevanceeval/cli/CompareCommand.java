@@ -79,6 +79,19 @@ public class CompareCommand implements Callable<Integer> {
     )
     private Path junitXmlPath;
 
+    @Option(
+            names = {"--html"},
+            description = "Path to write the comparison results as a self-contained HTML report."
+    )
+    private Path htmlPath;
+
+    @Option(
+            names = {"--judged-warning-threshold"},
+            defaultValue = "0.7",
+            description = "Threshold below which a judged@k warning is shown in the HTML report (default: 0.7)."
+    )
+    private double judgedWarningThreshold = 0.7;
+
     public static void main(String[] args) {
         int exitCode = new CommandLine(new CompareCommand()).execute(args);
         System.exit(exitCode);
@@ -148,6 +161,24 @@ public class CompareCommand implements Callable<Integer> {
                 JUnitXmlReportWriter.writeReport(comparisons, threshold, junitXmlPath);
             } catch (Exception e) {
                 System.err.println("Failed to write JUnit XML report to '" + junitXmlPath + "': " + e.getMessage());
+                return 1;
+            }
+        }
+
+        if (htmlPath != null) {
+            try {
+                HtmlReportWriter.writeReport(
+                        baselinePath,
+                        candidatePath,
+                        comparisons,
+                        baselineRuns,
+                        candidateRuns,
+                        significanceLevel,
+                        judgedWarningThreshold,
+                        htmlPath
+                );
+            } catch (Exception e) {
+                System.err.println("Failed to write HTML report to '" + htmlPath + "': " + e.getMessage());
                 return 1;
             }
         }

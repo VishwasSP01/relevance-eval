@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -373,6 +374,191 @@ class CompareCommandTest {
                 "--fail-on-significant-regression"
         );
         assertThat(exitWithFlag).isEqualTo(1);
+    }
+
+    @Test
+    void writesSelfContainedHtmlReportWithExpectedQueriesEscapingAndSignificance() throws Exception {
+        Path baselinePath = tempDir.resolve("html-baseline.json");
+        Path candidatePath = tempDir.resolve("html-candidate.json");
+        Path htmlPath = tempDir.resolve("reports/html-report.html");
+
+        ObjectMapper mapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
+
+        String specialQuery = "hiking <gear> & \"boots\" 'fast'";
+        MetricResult baseline = new MetricResult("NDCG@10", 0.75, Map.of(
+                "waterproof jacket", 0.95,
+                "running shoes", 0.50,
+                "trail boots", 0.70,
+                specialQuery, 0.85
+        ));
+        mapper.writeValue(baselinePath.toFile(), baseline);
+
+        MetricResult candidate = new MetricResult("NDCG@10", 0.75, Map.of(
+                "waterproof jacket", 0.60,
+                "running shoes", 0.80,
+                specialQuery, 0.85
+        ));
+        mapper.writeValue(candidatePath.toFile(), candidate);
+
+        int exitCode = new CommandLine(new RelevanceEvalCommand()).execute(
+                "compare",
+                "--baseline", baselinePath.toString(),
+                "--candidate", candidatePath.toString(),
+                "--threshold", "0.5",
+                "--html", htmlPath.toString(),
+                "--trials", "1000"
+        );
+
+        assertThat(exitCode).isEqualTo(0);
+        assertThat(htmlPath).exists();
+
+        String html = Files.readString(htmlPath);
+
+        // 1. Fully self-contained: contains style block, no CDN / external stylesheets, no script
+        assertThat(html)
+                .contains("<!DOCTYPE html>")
+                .contains("<style>")
+                .contains("</style>")
+                .doesNotContain("<link rel=\"stylesheet\"")
+                .doesNotContain("<script");
+
+        // 2. Header contains run names
+        assertThat(html)
+                .contains("html-baseline.json")
+                .contains("html-candidate.json")
+                .contains("Generated:");
+
+        // 3. Expected queries are present
+        assertThat(html)
+                .contains("waterproof jacket")
+                .contains("running shoes")
+                .contains("trail boots");
+
+        // 4. Special characters in query are escaped
+        assertThat(html)
+                .contains("hiking &lt;gear&gt; &amp; &quot;boots&quot; &#39;fast&#39;")
+                .doesNotContain("<gear>")
+                .doesNotContain("& \"boots\"");
+
+        // 5. Structure and tables
+        assertThat(html)
+                .contains("Top Regressed Queries")
+                .contains("Top Improved Queries")
+                .contains("Unchanged Queries")
+                .contains("Queries Present in Only One Run")
+                .contains("Baseline only");
+
+        // 6. Renders significance banner
+        assertThat(html)
+                .contains("significance-banner");
+
+        // 7. No emojis
+        assertThat(html).doesNotContain("⚠️").doesNotContain("✅").doesNotContain("❌");
+    }
+
+    @Test
+    void rendersSignificantStateInHtmlReport() throws Exception {
+        Path baselinePath = tempDir.resolve("html-sig-baseline.json");
+        Path candidatePath = tempDir.resolve("html-sig-candidate.json");
+        Path htmlPath = tempDir.resolve("reports/sig-report.html");
+
+        Map<String, Double> baseMap = new HashMap<>();
+        Map<String, Double> candMap = new HashMap<>();
+        for (int i = 1; i <= 20; i++) {
+            baseMap.put("query" + i, 0.30);
+            candMap.put("query" + i, 0.90);
+        }
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.writeValue(baselinePath.toFile(), new MetricResult("NDCG@10", 0.30, baseMap));
+        mapper.writeValue(candidatePath.toFile(), new MetricResult("NDCG@10", 0.90, candMap));
+
+        int exitCode = new CommandLine(new RelevanceEvalCommand()).execute(
+                "compare",
+                "--baseline", baselinePath.toString(),
+                "--candidate", candidatePath.toString(),
+                "--html", htmlPath.toString(),
+                "--significance-level", "0.05",
+                "--trials", "1000"
+        );
+        assertThat(exitCode).isEqualTo(0);
+        assertThat(htmlPath).exists();
+
+        String html = Files.readString(htmlPath);
+        assertThat(html)
+                .contains("significance-banner significant")
+                .contains("Significant")
+                .contains("at alpha = 0.05");
+    }
+
+    @Test
+    void rendersJudgedCoverageWarningInHtmlWhenBelowThreshold() throws Exception {
+        Path baselinePath = tempDir.resolve("html-judged-warn-baseline.json");
+        Path candidatePath = tempDir.resolve("html-judged-warn-candidate.json");
+        Path htmlPath = tempDir.resolve("reports/judged-warn-report.html");
+
+        ObjectMapper mapper = new ObjectMapper();
+        List<MetricResult> baseline = List.of(
+                new MetricResult("NDCG@10", 0.70, Map.of("q1", 0.70)),
+                new MetricResult("Judged@10", 0.80, Map.of("q1", 0.80))
+        );
+        List<MetricResult> candidate = List.of(
+                new MetricResult("NDCG@10", 0.75, Map.of("q1", 0.75)),
+                new MetricResult("Judged@10", 0.42, Map.of("q1", 0.42)) // 0.42 < 0.70
+        );
+        mapper.writeValue(baselinePath.toFile(), baseline);
+        mapper.writeValue(candidatePath.toFile(), candidate);
+
+        int exitCode = new CommandLine(new RelevanceEvalCommand()).execute(
+                "compare",
+                "--baseline", baselinePath.toString(),
+                "--candidate", candidatePath.toString(),
+                "--threshold", "0.5",
+                "--html", htmlPath.toString(),
+                "--judged-warning-threshold", "0.7"
+        );
+        assertThat(exitCode).isEqualTo(0);
+
+        String html = Files.readString(htmlPath);
+        assertThat(html)
+                .contains("coverage-box coverage-warning")
+                .contains("Warning: Low judgment coverage")
+                .contains("Judged@10 is <strong>0.4200</strong>")
+                .contains("58% of returned results have no judgment");
+    }
+
+    @Test
+    void rendersJudgedCoverageOkInHtmlWhenAboveThreshold() throws Exception {
+        Path baselinePath = tempDir.resolve("html-judged-ok-baseline.json");
+        Path candidatePath = tempDir.resolve("html-judged-ok-candidate.json");
+        Path htmlPath = tempDir.resolve("reports/judged-ok-report.html");
+
+        ObjectMapper mapper = new ObjectMapper();
+        List<MetricResult> baseline = List.of(
+                new MetricResult("NDCG@10", 0.70, Map.of("q1", 0.70)),
+                new MetricResult("Judged@10", 0.80, Map.of("q1", 0.80))
+        );
+        List<MetricResult> candidate = List.of(
+                new MetricResult("NDCG@10", 0.75, Map.of("q1", 0.75)),
+                new MetricResult("Judged@10", 0.88, Map.of("q1", 0.88)) // 0.88 >= 0.70
+        );
+        mapper.writeValue(baselinePath.toFile(), baseline);
+        mapper.writeValue(candidatePath.toFile(), candidate);
+
+        int exitCode = new CommandLine(new RelevanceEvalCommand()).execute(
+                "compare",
+                "--baseline", baselinePath.toString(),
+                "--candidate", candidatePath.toString(),
+                "--html", htmlPath.toString(),
+                "--judged-warning-threshold", "0.7"
+        );
+        assertThat(exitCode).isEqualTo(0);
+
+        String html = Files.readString(htmlPath);
+        assertThat(html)
+                .contains("class=\"coverage-box coverage-ok\"")
+                .doesNotContain("class=\"coverage-box coverage-warning\"")
+                .contains("Judged@10 Coverage:")
+                .contains("meets threshold 0.7000");
     }
 }
 
