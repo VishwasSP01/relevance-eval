@@ -1,0 +1,25 @@
+plugins {
+    scala
+}
+
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(21))
+    }
+}
+
+val scala3Version = "3.9.0"
+val scalatestVersion = "3.2.20"
+
+dependencies {
+    implementation(project(":core"))
+    implementation("org.scala-lang:scala3-library_3:$scala3Version")
+
+    testImplementation("org.scalatest:scalatest_3:$scalatestVersion")
+    testRuntimeOnly("org.scalatestplus:junit-5-14_3:3.2.20.0")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+}
+
+tasks.test {
+    useJUnitPlatform()
+}
