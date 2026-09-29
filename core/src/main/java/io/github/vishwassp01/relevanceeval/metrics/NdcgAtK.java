@@ -75,10 +75,9 @@ public class NdcgAtK implements Metric {
     }
 
     @Override
-    public MetricResult evaluate(JudgmentSet judgments, SearchBackend backend, SearchContext context) {
+    public MetricResult computeFrom(JudgmentSet judgments, Map<String, List<SearchResult>> resultsByQuery) {
         Objects.requireNonNull(judgments, "judgments must not be null");
-        Objects.requireNonNull(backend, "backend must not be null");
-        Objects.requireNonNull(context, "context must not be null");
+        Objects.requireNonNull(resultsByQuery, "resultsByQuery must not be null");
 
         Set<String> queries = judgments.queries();
         if (queries.isEmpty()) {
@@ -95,7 +94,7 @@ public class NdcgAtK implements Metric {
             }
 
             // Calculate DCG@K over top k returned results
-            List<SearchResult> results = backend.search(query, context);
+            List<SearchResult> results = resultsByQuery.get(query);
             int evalLimit = (results != null) ? Math.min(k, results.size()) : 0;
 
             double dcg = 0.0;

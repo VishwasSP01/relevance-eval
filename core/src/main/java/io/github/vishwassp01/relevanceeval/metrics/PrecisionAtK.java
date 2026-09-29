@@ -56,10 +56,9 @@ public class PrecisionAtK implements Metric {
     }
 
     @Override
-    public MetricResult evaluate(JudgmentSet judgments, SearchBackend backend, SearchContext context) {
+    public MetricResult computeFrom(JudgmentSet judgments, Map<String, List<SearchResult>> resultsByQuery) {
         Objects.requireNonNull(judgments, "judgments must not be null");
-        Objects.requireNonNull(backend, "backend must not be null");
-        Objects.requireNonNull(context, "context must not be null");
+        Objects.requireNonNull(resultsByQuery, "resultsByQuery must not be null");
 
         Set<String> queries = judgments.queries();
         if (queries.isEmpty()) {
@@ -75,7 +74,7 @@ public class PrecisionAtK implements Metric {
                 gradeByDocId.put(j.docId(), Math.max(gradeByDocId.getOrDefault(j.docId(), 0), j.grade()));
             }
 
-            List<SearchResult> results = backend.search(query, context);
+            List<SearchResult> results = resultsByQuery.get(query);
             int evalLimit = (results != null) ? Math.min(k, results.size()) : 0;
 
             int relevantCount = 0;
